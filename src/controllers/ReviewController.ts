@@ -4,12 +4,15 @@ import {
   CreateReviewDTO,
   UpdateReviewDTO,
 } from "../services/ReviewService";
+import { RatingService } from "../services/RatingService";
 
 export class ReviewController {
   private _reviewService: ReviewService;
+  private _ratingService: RatingService;
 
   constructor() {
     this._reviewService = new ReviewService();
+    this._ratingService = new RatingService();
   }
 
   /**
@@ -233,6 +236,31 @@ export class ReviewController {
       const review = await this._reviewService.deleteReview(reviewId, clientId);
 
       res.success(review, "Reseña eliminada exitosamente", 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /reviews/provider/:provider_id/stats ⭐ NUEVO
+   * Obtener estadísticas de rating de un proveedor
+   */
+  async getProviderRatingStats(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const providerId = parseInt(req.params.provider_id);
+      if (isNaN(providerId)) {
+        res.status(400).json({ error: "Invalid provider ID" });
+        return;
+      }
+
+      const stats =
+        await this._ratingService.getProviderRatingStats(providerId);
+
+      res.success(stats, "Estadísticas de rating obtenidas exitosamente", 200);
     } catch (error) {
       next(error);
     }

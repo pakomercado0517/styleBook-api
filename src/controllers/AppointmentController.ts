@@ -183,4 +183,135 @@ export class AppointmentController {
       next(error);
     }
   }
+
+  /**
+   * POST /appointments/:id/confirm
+   * Confirmar una cita (solo proveedor)
+   */
+  async confirmAppointment(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const providerId = req.user?.id;
+
+      if (isNaN(appointmentId)) {
+        res.status(400).json({ error: "Invalid appointment ID" });
+        return;
+      }
+
+      if (!providerId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const appointment = await this._appointmentService.confirmAppointment(
+        appointmentId,
+        providerId
+      );
+
+      res.success(appointment, "Cita confirmada exitosamente", 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /appointments/provider/pending
+   * Obtener citas pendientes de confirmación del proveedor autenticado
+   */
+  async getProviderPendingAppointments(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const providerId = req.user?.id;
+
+      if (!providerId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      if (limit > 100) {
+        res.status(400).json({ error: "Limit cannot exceed 100" });
+        return;
+      }
+
+      const result =
+        await this._appointmentService.getProviderPendingAppointments(
+          providerId,
+          limit,
+          offset
+        );
+
+      res.success(result, "Citas pendientes obtenidas exitosamente", 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /appointments/provider/all
+   * Obtener todas las citas del proveedor (con filtro opcional por estado)
+   */
+  async getProviderAppointments(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const providerId = req.user?.id;
+
+      if (!providerId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const status = (req.query.status as string) || undefined;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      if (limit > 100) {
+        res.status(400).json({ error: "Limit cannot exceed 100" });
+        return;
+      }
+
+      // Validar status si se proporciona
+      if (
+        status &&
+        !["pending", "confirmed", "completed", "cancelled", "no_show"].includes(
+          status
+        )
+      ) {
+        res.status(400).json({
+          error:
+            "Status must be one of: pending, confirmed, completed, cancelled, no_show",
+        });
+        return;
+      }
+
+      const result = await this._appointmentService.getProviderAppointments(
+        providerId,
+        status as
+          | "pending"
+          | "confirmed"
+          | "completed"
+          | "cancelled"
+          | "no_show"
+          | undefined,
+        limit,
+        offset
+      );
+
+      res.success(result, "Citas del proveedor obtenidas exitosamente", 200);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

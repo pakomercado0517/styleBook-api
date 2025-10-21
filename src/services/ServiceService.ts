@@ -1,6 +1,7 @@
 import Services from "../models/Services";
 import Providers from "../models/Providers";
 import { NotFoundError, AppError } from "../utils/errors";
+import { Op } from "sequelize";
 
 export interface CreateServiceDTO {
   name: string;
@@ -17,6 +18,17 @@ export interface UpdateServiceDTO {
   price?: number;
   image_url?: string;
   is_active?: boolean;
+}
+
+export interface SearchServicesDTO {
+  search?: string;
+  price_min?: number;
+  price_max?: number;
+  provider_id?: number;
+  city?: string;
+  sort_by?: "price_asc" | "price_desc" | "name" | "rating" | "newest";
+  limit?: number;
+  offset?: number;
 }
 
 export class ServiceService {
@@ -60,6 +72,98 @@ export class ServiceService {
       };
     } catch (error) {
       throw new AppError("Error al obtener servicios", 500);
+    }
+  }
+
+  async searchServices(dto: SearchServicesDTO) {
+    try {
+      const limit = dto.limit || 10;
+      const offset = dto.offset || 0;
+      const whereClause: any = { is_active: true };
+      const providerWhereClause: any = { is_active: true };
+
+      // Filtro por nombre o descripción
+      if (dto.search) {
+        whereClause[Op.or] = [
+          { name: { [Op.iLike]: `%${dto.search}%` } },
+          { description: { [Op.iLike]: `%${dto.search}%` } },
+        ];
+      }
+
+      // Filtro por rango de precio
+      if (dto.price_min !== undefined || dto.price_max !== undefined) {
+        whereClause.price = {};
+        if (dto.price_min !== undefined) {
+          whereClause.price[Op.gte] = dto.price_min;
+        }
+        if (dto.price_max !== undefined) {
+          whereClause.price[Op.lte] = dto.price_max;
+        }
+      }
+
+      // Filtro por proveedor específico
+      if (dto.provider_id) {
+        whereClause.provider_id = dto.provider_id;
+      }
+
+      // Filtro por ciudad del proveedor
+      if (dto.city) {
+        providerWhereClause.city = { [Op.iLike]: `%${dto.city}%` };
+      }
+
+      // Determinar ordenamiento
+      const orderBy: any[] = [];
+      switch (dto.sort_by) {
+        case "price_asc":
+          orderBy.push(["price", "ASC"]);
+          break;
+        case "price_desc":
+          orderBy.push(["price", "DESC"]);
+          break;
+        case "name":
+          orderBy.push(["name", "ASC"]);
+          break;
+        case "rating":
+          orderBy.push([Providers, "average_rating", "DESC"]);
+          break;
+        case "newest":
+          orderBy.push(["createdAt", "DESC"]);
+          break;
+        default:
+          orderBy.push(["createdAt", "DESC"]);
+      }
+
+      const { count, rows } = await Services.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: Providers,
+            attributes: [
+              "id",
+              "business_name",
+              "business_type",
+              "city",
+              "address",
+              "average_rating",
+            ],
+            where: Object.keys(providerWhereClause).length > 0 ? providerWhereClause : undefined,
+          },
+        ],
+        limit,
+        offset,
+        order: orderBy,
+        distinct: true,
+      });
+
+      return {
+        total: count,
+        count: rows.length,
+        limit,
+        offset,
+        data: rows,
+      };
+    } catch (error) {
+      throw new AppError("Error al buscar servicios", 500);
     }
   }
 

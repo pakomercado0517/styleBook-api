@@ -3,6 +3,7 @@ import {
   ServiceService,
   CreateServiceDTO,
   UpdateServiceDTO,
+  SearchServicesDTO,
 } from "../services/ServiceService";
 
 export class ServiceController {
@@ -41,6 +42,31 @@ export class ServiceController {
       const result = await this._serviceService.getAllServices(limit, offset);
 
       res.success(result, "Servicios obtenidos", 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async searchServices(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const dto: SearchServicesDTO = {
+        search: req.query.search as string,
+        price_min: req.query.price_min ? parseFloat(req.query.price_min as string) : undefined,
+        price_max: req.query.price_max ? parseFloat(req.query.price_max as string) : undefined,
+        provider_id: req.query.provider_id ? parseInt(req.query.provider_id as string) : undefined,
+        city: req.query.city as string,
+        sort_by: (req.query.sort_by as SearchServicesDTO["sort_by"]) || "newest",
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
+        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+      };
+
+      const result = await this._serviceService.searchServices(dto);
+
+      res.success(result, "Búsqueda de servicios completada", 200);
     } catch (error) {
       next(error);
     }

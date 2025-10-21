@@ -227,7 +227,7 @@ npm start
 | 🔐 **Auth**          | 3         | ✅ Completado |
 | 👥 **Users**         | 4         | ✅ Completado |
 | 🏢 **Providers**     | 5         | ✅ Completado |
-| 🔧 **Services**      | 6         | ✅ Completado |
+| 🔧 **Services**      | 7         | ✅ Completado |
 | 📅 **Appointments**  | 5         | ✅ Completado |
 | ⭐ **Reviews**       | 6         | ✅ Completado |
 | 🚫 **Blocked Hours** | 7         | ✅ Completado |
@@ -276,11 +276,53 @@ Content-Type: application/json
 }
 ```
 
+#### 🔍 Búsqueda Avanzada de Servicios (NUEVO ⭐)
+
+```bash
+GET /services/search?search=corte&price_min=10&price_max=100&city=Madrid&sort_by=rating
+
+Query Parameters:
+- search: Busca en nombre o descripción
+- price_min: Precio mínimo
+- price_max: Precio máximo
+- city: Ciudad del proveedor
+- provider_id: ID del proveedor específico
+- sort_by: Ordenamiento (newest, price_asc, price_desc, name, rating)
+- limit: Resultados por página (default: 10)
+- offset: Desplazamiento (default: 0)
+```
+
 Para documentación completa, ver `docs/api_routes/` o importar la colección en Postman.
 
 ---
 
 ## 🧪 Testing
+
+### Tests Unitarios (Jest) ⭐ NUEVO
+
+```bash
+# Ejecutar todos los tests
+npm test
+
+# Modo watch (desarrollo)
+npm run test:watch
+
+# Reporte de cobertura
+npm run test:coverage
+```
+
+**Suite de Tests Actual:**
+
+- ✅ AuthService (14 tests)
+- ✅ ServiceService (21 tests)
+- ✅ FavoriteService (20 tests)
+- ✅ AvailabilityService (6 tests)
+- ✅ AuthController (9 tests)
+- ✅ ServiceController (17 tests)
+- ✅ FavoriteController (14 tests)
+- **Total: 91 tests** ✅
+
+Ver `docs/TESTING.md` para guía completa de testing.
 
 ### Con Postman
 

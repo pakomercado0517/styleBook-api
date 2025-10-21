@@ -9,6 +9,8 @@ import servicesRouter from "./router/services";
 import appointmentsRouter from "./router/appointments";
 import reviewsRouter from "./router/reviews";
 import blockedHoursRouter from "./router/blockedHours";
+import availabilityRouter from "./router/availability";
+import favoritesRouter from "./router/favorites";
 
 export async function connectDB(): Promise<void> {
   try {
@@ -62,6 +64,12 @@ app.use("/reviews", reviewsRouter);
 
 // Rutas de horarios bloqueados
 app.use("/blocked-hours", blockedHoursRouter);
+
+// Rutas de disponibilidad
+app.use("/availability", availabilityRouter);
+
+// Rutas de favoritos
+app.use("/favorites", favoritesRouter);
 
 // Ruta no encontrada
 app.use((_req, res) => {

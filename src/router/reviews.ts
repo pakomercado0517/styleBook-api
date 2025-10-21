@@ -90,4 +90,15 @@ router.delete(
     reviewController.deleteReview(req, res, next)
 );
 
+/**
+ * GET /reviews/provider/:provider_id/stats ⭐ NUEVO
+ * Obtener estadísticas de rating de un proveedor
+ * Público - sin autenticación requerida
+ */
+router.get(
+  "/provider/:provider_id/stats",
+  (req: Request, res: Response, next: NextFunction) =>
+    reviewController.getProviderRatingStats(req, res, next)
+);
+
 export default router;

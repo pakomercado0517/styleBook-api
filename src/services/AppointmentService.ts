@@ -8,6 +8,7 @@ import {
   formatInTimezone,
   datesOverlap,
 } from "../utils/dateUtils";
+import { AppError } from "../utils/errors";
 
 export interface CreateAppointmentDTO {
   service_id: number;
@@ -218,6 +219,130 @@ export class AppointmentService {
     }
 
     return this._mapToResponse(appointment, client.timezone);
+  }
+
+  /**
+   * Confirmar una cita (solo proveedor)
+   * Una cita debe estar en estado "pending" para ser confirmada
+   * @throws Error si la cita no existe, no está pending, o no pertenece al proveedor
+   */
+  async confirmAppointment(
+    appointmentId: number,
+    providerId: number
+  ): Promise<AppointmentResponse> {
+    // 1. Obtener cita
+    const appointment = await Appointments.findByPk(appointmentId);
+    if (!appointment) {
+      throw new AppError(`Cita ${appointmentId} no encontrada`, 404);
+    }
+
+    // 2. Verificar que pertenezca al proveedor
+    if (appointment.provider_id !== providerId) {
+      throw new AppError(`No tienes permisos para confirmar esta cita`, 403);
+    }
+
+    // 3. Verificar que esté en estado "pending"
+    if (appointment.status !== "pending") {
+      throw new AppError(
+        `Solo se pueden confirmar citas en estado "pending". Estado actual: ${appointment.status}`,
+        409
+      );
+    }
+
+    // 4. Cambiar estado a "confirmed"
+    appointment.status = "confirmed";
+    await appointment.save();
+
+    // 5. Obtener cliente para timezone
+    const client = await Users.findByPk(appointment.client_id);
+    if (!client) {
+      throw new AppError(`Cliente no encontrado para la cita`, 404);
+    }
+
+    return this._mapToResponse(appointment, client.timezone);
+  }
+
+  /**
+   * Obtener todas las citas pendientes de un proveedor
+   * Útil para que el proveedor vea qué citas necesita confirmar
+   */
+  async getProviderPendingAppointments(
+    providerId: number,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<{
+    appointments: AppointmentResponse[];
+    total: number;
+    pending_count: number;
+  }> {
+    const { count, rows } = await Appointments.findAndCountAll({
+      where: {
+        provider_id: providerId,
+        status: "pending",
+      },
+      limit,
+      offset,
+      order: [["start_date", "ASC"]],
+    });
+
+    // Obtener timezone del primer cliente (si existe)
+    let defaultTimezone = "America/Mexico_City";
+    if (rows.length > 0) {
+      const client = await Users.findByPk(rows[0].client_id);
+      if (client) {
+        defaultTimezone = client.timezone;
+      }
+    }
+
+    return {
+      appointments: rows.map((apt: Appointments) =>
+        this._mapToResponse(apt, defaultTimezone)
+      ),
+      total: count,
+      pending_count: rows.length,
+    };
+  }
+
+  /**
+   * Obtener todas las citas de un proveedor (confirmadas y pendientes)
+   */
+  async getProviderAppointments(
+    providerId: number,
+    status?: "pending" | "confirmed" | "completed" | "cancelled" | "no_show",
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<{
+    appointments: AppointmentResponse[];
+    total: number;
+  }> {
+    const whereClause: any = { provider_id: providerId };
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    const { count, rows } = await Appointments.findAndCountAll({
+      where: whereClause,
+      limit,
+      offset,
+      order: [["start_date", "DESC"]],
+    });
+
+    // Obtener timezone del primer cliente
+    let defaultTimezone = "America/Mexico_City";
+    if (rows.length > 0) {
+      const client = await Users.findByPk(rows[0].client_id);
+      if (client) {
+        defaultTimezone = client.timezone;
+      }
+    }
+
+    return {
+      appointments: rows.map((apt: Appointments) =>
+        this._mapToResponse(apt, defaultTimezone)
+      ),
+      total: count,
+    };
   }
 
   /**

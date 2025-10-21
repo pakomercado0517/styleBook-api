@@ -79,4 +79,44 @@ router.delete(
     appointmentController.cancelAppointment(req, res, next)
 );
 
+/**
+ * POST /appointments/:id/confirm
+ * Confirmar una cita (solo proveedor)
+ * Headers: Authorization: Bearer {token}
+ */
+router.post(
+  "/:id/confirm",
+  authenticate,
+  appointmentValidators.getById,
+  handleValidationErrors,
+  (req: Request, res: Response, next: NextFunction) =>
+    appointmentController.confirmAppointment(req, res, next)
+);
+
+/**
+ * GET /appointments/provider/pending
+ * Obtener citas pendientes del proveedor autenticado
+ * Headers: Authorization: Bearer {token}
+ * Query: ?limit=20&offset=0
+ */
+router.get(
+  "/provider/pending",
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) =>
+    appointmentController.getProviderPendingAppointments(req, res, next)
+);
+
+/**
+ * GET /appointments/provider/all
+ * Obtener todas las citas del proveedor autenticado
+ * Headers: Authorization: Bearer {token}
+ * Query: ?status=confirmed&limit=20&offset=0
+ */
+router.get(
+  "/provider/all",
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) =>
+    appointmentController.getProviderAppointments(req, res, next)
+);
+
 export default router;

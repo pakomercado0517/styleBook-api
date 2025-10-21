@@ -2,6 +2,8 @@ import Reviews from "../models/Reviews";
 import Appointments from "../models/Appointments";
 import Users from "../models/Users";
 import Providers from "../models/Providers";
+import { RatingService } from "./RatingService";
+import { AppError } from "../utils/errors";
 
 export interface CreateReviewDTO {
   appointment_id: number;
@@ -46,6 +48,12 @@ export interface ReviewResponse {
 }
 
 export class ReviewService {
+  private _ratingService: RatingService;
+
+  constructor() {
+    this._ratingService = new RatingService();
+  }
+
   /**
    * Crear una nueva reseña
    * @throws Error si la cita no existe o no está completada
@@ -57,17 +65,17 @@ export class ReviewService {
     // 1. Validar que la cita exista
     const appointment = await Appointments.findByPk(dto.appointment_id);
     if (!appointment) {
-      throw new Error(`Appointment ${dto.appointment_id} not found`);
+      throw new AppError(`Cita ${dto.appointment_id} no encontrada`, 404);
     }
 
     // 2. Validar que la cita pertenezca al cliente
     if (appointment.client_id !== clientId) {
-      throw new Error("Unauthorized: appointment does not belong to client");
+      throw new AppError("La cita no pertenece a este cliente", 403);
     }
 
     // 3. Validar que la cita esté completada
     if (appointment.status !== "completed") {
-      throw new Error("Cannot review appointment that is not completed");
+      throw new AppError("Solo se pueden reseñar citas completadas", 409);
     }
 
     // 4. Verificar si ya existe reseña para esta cita
@@ -76,12 +84,12 @@ export class ReviewService {
     });
 
     if (existingReview) {
-      throw new Error("Review already exists for this appointment");
+      throw new AppError("Ya existe una reseña para esta cita", 409);
     }
 
     // 5. Validar rating (1-5)
     if (dto.rating < 1 || dto.rating > 5) {
-      throw new Error("Rating must be between 1 and 5");
+      throw new AppError("El rating debe estar entre 1 y 5", 400);
     }
 
     // 6. Crear la reseña
@@ -93,7 +101,10 @@ export class ReviewService {
       comment: dto.comment || null,
     });
 
-    // 7. Retornar con información adicional
+    // 7. Actualizar rating promedio del proveedor ⭐
+    await this._ratingService.updateProviderRating(appointment.provider_id);
+
+    // 8. Retornar con información adicional
     return this._mapToResponse(review);
   }
 
@@ -182,17 +193,22 @@ export class ReviewService {
   ): Promise<ReviewResponse> {
     const review = await Reviews.findByPk(reviewId);
     if (!review) {
-      throw new Error(`Review ${reviewId} not found`);
+      throw new AppError(`Reseña ${reviewId} no encontrada`, 404);
     }
 
     // Solo el cliente que escribió la reseña puede actualizarla
     if (review.client_id !== clientId) {
-      throw new Error("Unauthorized: cannot update review");
+      throw new AppError("No tienes permisos para actualizar esta reseña", 403);
     }
+
+    let ratingChanged = false;
 
     if (dto.rating !== undefined) {
       if (dto.rating < 1 || dto.rating > 5) {
-        throw new Error("Rating must be between 1 and 5");
+        throw new AppError("El rating debe estar entre 1 y 5", 400);
+      }
+      if (dto.rating !== review.rating) {
+        ratingChanged = true;
       }
       review.rating = dto.rating;
     }
@@ -209,13 +225,19 @@ export class ReviewService {
         : null;
 
       if (providerUser?.id !== clientId) {
-        throw new Error("Unauthorized: only provider can add response");
+        throw new AppError("Solo el proveedor puede agregar respuesta", 403);
       }
 
       review.provider_response = dto.provider_response;
     }
 
     await review.save();
+
+    // Actualizar rating promedio si cambió la calificación ⭐
+    if (ratingChanged) {
+      await this._ratingService.updateProviderRating(review.provider_id);
+    }
+
     return this._mapToResponse(review);
   }
 
@@ -228,16 +250,22 @@ export class ReviewService {
   ): Promise<ReviewResponse> {
     const review = await Reviews.findByPk(reviewId);
     if (!review) {
-      throw new Error(`Review ${reviewId} not found`);
+      throw new AppError(`Reseña ${reviewId} no encontrada`, 404);
     }
 
     // Solo el cliente que escribió la reseña puede eliminarla
     if (review.client_id !== clientId) {
-      throw new Error("Unauthorized: cannot delete review");
+      throw new AppError("No tienes permisos para eliminar esta reseña", 403);
     }
 
     const deletedReview = await this._mapToResponse(review);
+    const providerId = review.provider_id;
+
     await review.destroy();
+
+    // Actualizar rating promedio después de eliminar ⭐
+    await this._ratingService.updateProviderRating(providerId);
+
     return deletedReview;
   }
 

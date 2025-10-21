@@ -7,6 +7,15 @@ const router = express.Router();
 const serviceController = new ServiceController();
 
 /**
+ * GET /services/search
+ * Buscar servicios con filtros avanzados
+ * Query: ?search=corte&price_min=10&price_max=100&city=Madrid&sort_by=price_asc&limit=20&offset=0
+ */
+router.get("/search", (req: Request, res: Response, next: NextFunction) =>
+  serviceController.searchServices(req, res, next)
+);
+
+/**
  * GET /services
  * Obtener todos los servicios (paginado)
  * Query: ?page=1&limit=20&provider_id=7&price_min=100&price_max=500
