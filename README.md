@@ -21,13 +21,14 @@ Stylebook es una plataforma de agendamiento de citas para diferentes tipos de ne
 ✅ **Manejo de Horarios** - Timezone automático y bloques de disponibilidad  
 ✅ **API RESTful** - 36 endpoints completamente documentados  
 ✅ **Validaciones Robustas** - Express-validator en todos los endpoints  
-✅ **Manejo de Errores** - Sistema centralizado de errores  
+✅ **Manejo de Errores** - Sistema centralizado de errores
 
 ---
 
 ## 🛠️ Stack Tecnológico
 
 ### Backend
+
 - **Runtime:** Node.js 18+
 - **Framework:** Express.js 5.1.0
 - **Lenguaje:** TypeScript 5.9.3
@@ -221,19 +222,20 @@ npm start
 
 ### Total: 36 Endpoints
 
-| Sección | Endpoints | Estado |
-|---------|-----------|--------|
-| 🔐 **Auth** | 3 | ✅ Completado |
-| 👥 **Users** | 4 | ✅ Completado |
-| 🏢 **Providers** | 5 | ✅ Completado |
-| 🔧 **Services** | 6 | ✅ Completado |
-| 📅 **Appointments** | 5 | ✅ Completado |
-| ⭐ **Reviews** | 6 | ✅ Completado |
-| 🚫 **Blocked Hours** | 7 | ✅ Completado |
+| Sección              | Endpoints | Estado        |
+| -------------------- | --------- | ------------- |
+| 🔐 **Auth**          | 3         | ✅ Completado |
+| 👥 **Users**         | 4         | ✅ Completado |
+| 🏢 **Providers**     | 5         | ✅ Completado |
+| 🔧 **Services**      | 6         | ✅ Completado |
+| 📅 **Appointments**  | 5         | ✅ Completado |
+| ⭐ **Reviews**       | 6         | ✅ Completado |
+| 🚫 **Blocked Hours** | 7         | ✅ Completado |
 
 ### Ejemplos Rápidos
 
 #### Registrarse
+
 ```bash
 POST /auth/register
 Content-Type: application/json
@@ -248,6 +250,7 @@ Content-Type: application/json
 ```
 
 #### Login
+
 ```bash
 POST /auth/login
 Content-Type: application/json
@@ -259,6 +262,7 @@ Content-Type: application/json
 ```
 
 #### Crear Cita
+
 ```bash
 POST /appointments
 Authorization: Bearer {token}
@@ -307,14 +311,14 @@ Ver `docs/TESTING_POSTMAN.md` para guía completa.
 
 La documentación detallada está en la carpeta `docs/`:
 
-| Documento | Descripción |
-|-----------|-------------|
-| `PROJECT_CONTEXT.md` | Contexto y visión del proyecto |
-| `RULES.md` | Reglas y estándares de desarrollo |
-| `BUSINESS_FLOW.md` | Flujo de negocio completo |
-| `TESTING_POSTMAN.md` | Guía de pruebas |
-| `ALIGNMENT_RULES.md` | Alineación a reglas y contexto |
-| `API_ROUTES_SUMMARY.md` | Resumen de rutas API |
+| Documento               | Descripción                       |
+| ----------------------- | --------------------------------- |
+| `PROJECT_CONTEXT.md`    | Contexto y visión del proyecto    |
+| `RULES.md`              | Reglas y estándares de desarrollo |
+| `BUSINESS_FLOW.md`      | Flujo de negocio completo         |
+| `TESTING_POSTMAN.md`    | Guía de pruebas                   |
+| `ALIGNMENT_RULES.md`    | Alineación a reglas y contexto    |
+| `API_ROUTES_SUMMARY.md` | Resumen de rutas API              |
 
 ---
 
@@ -397,6 +401,7 @@ Para detalles completos, ver `docs/BUSINESS_FLOW.md`.
 ## 🐛 Solución de Problemas
 
 ### Error: Database Connection
+
 ```
 Verificar que PostgreSQL está corriendo
 Revisar DATABASE_URL en .env
@@ -404,6 +409,7 @@ Confirmar que la BD existe
 ```
 
 ### Error: JWT Token Invalid
+
 ```
 Hacer login primero con /auth/login
 El token se guarda automáticamente en Postman
@@ -411,6 +417,7 @@ Si no funciona, verificar que el token no expiró
 ```
 
 ### Error: Email Already Exists
+
 ```
 Cambiar el email en el registro
 Los emails deben ser únicos en el sistema
@@ -437,18 +444,21 @@ git commit -m "test: agregar pruebas unitarias"
 ## 🚀 Próximas Funcionalidades
 
 ### Fase 2 - En Desarrollo
+
 - [ ] Sistema de Disponibilidad Avanzado
 - [ ] Confirmación de Citas (Proveedor)
 - [ ] Búsqueda con Filtros Avanzados
 - [ ] Cálculo de Rating Automático
 
 ### Fase 3 - Próximamente
+
 - [ ] Sistema de Pagos (Stripe/MercadoPago)
 - [ ] Notificaciones Email/SMS
 - [ ] Sistema de Favoritos
 - [ ] Comentarios en Reseñas
 
 ### Fase 4 - Largo Plazo
+
 - [ ] Promociones y Descuentos
 - [ ] Reportes y Analytics
 - [ ] Integración de Calendario
@@ -499,6 +509,7 @@ Este proyecto está bajo la licencia ISC. Ver `LICENSE` para más detalles.
 ## 👨‍💻 Autor
 
 **Pako Mercado**
+
 - Email: pako@example.com
 - GitHub: [@pakomercat](https://github.com/pakomercat)
 
@@ -544,4 +555,5 @@ Para soporte o preguntas:
 **Last Updated:** 21 de Octubre, 2025  
 **Version:** 1.0.0  
 **Status:** ✅ Production Ready
+
 # styleBook-api
