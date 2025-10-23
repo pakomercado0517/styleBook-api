@@ -11,12 +11,13 @@ import reviewsRouter from "./router/reviews";
 import blockedHoursRouter from "./router/blockedHours";
 import availabilityRouter from "./router/availability";
 import favoritesRouter from "./router/favorites";
+import emailTestRouter from "./router/emailTestRouter";
 import cors from "cors";
 
 export async function connectDB(): Promise<void> {
   try {
     await db.authenticate();
-    await db.sync({ alter: true, force: false });
+    await db.sync({ alter: true, force: true });
     console.log("✅ Conexión exitosa a la base de datos");
   } catch (error) {
     console.error("❌ Error al conectar a la base de datos:", error);
@@ -63,6 +64,7 @@ app.use("/api/reviews", reviewsRouter);
 app.use("/api/blocked-hours", blockedHoursRouter);
 app.use("/api/availability", availabilityRouter);
 app.use("/api/favorites", favoritesRouter);
+app.use("/api/emails", emailTestRouter); // Email testing routes
 
 // Ruta no encontrada
 app.use((_req, res) => {

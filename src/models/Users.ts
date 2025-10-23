@@ -78,6 +78,36 @@ class Users extends Model {
   })
   declare timezone: string;
 
+  @AllowNull(true)
+  @Column({
+    type: DataType.DATE,
+  })
+  declare email_verified_at: Date | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.STRING(255),
+  })
+  declare verification_token: string | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.DATE,
+  })
+  declare verification_token_expires: Date | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.STRING(255),
+  })
+  declare reset_password_token: string | null;
+
+  @AllowNull(true)
+  @Column({
+    type: DataType.DATE,
+  })
+  declare reset_password_token_expires: Date | null;
+
   // ==================== RELACIONES ====================
 
   @HasOne(() => Clients, "user_id")

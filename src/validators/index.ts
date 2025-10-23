@@ -100,6 +100,60 @@ export const authValidators = {
         "New password must contain uppercase, lowercase, and numbers"
       ),
   ],
+
+  resendVerification: [
+    body("email")
+      .trim()
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Invalid email format")
+      .normalizeEmail(),
+  ],
+
+  forgotPassword: [
+    body("email")
+      .trim()
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Invalid email format")
+      .normalizeEmail(),
+  ],
+
+  resetPassword: [
+    body("token")
+      .notEmpty()
+      .withMessage("Reset token is required")
+      .isLength({ min: 64, max: 64 })
+      .withMessage("Invalid token format"),
+
+    body("newPassword")
+      .notEmpty()
+      .withMessage("New password is required")
+      .isLength({ min: 8 })
+      .withMessage("New password must be at least 8 characters")
+      .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      .withMessage(
+        "New password must contain uppercase, lowercase, and numbers"
+      ),
+  ],
+
+  refreshToken: [
+    body("refreshToken")
+      .notEmpty()
+      .withMessage("Refresh token is required")
+      .isString()
+      .withMessage("Refresh token must be a string"),
+  ],
+
+  logout: [
+    body("refreshToken")
+      .notEmpty()
+      .withMessage("Refresh token is required")
+      .isString()
+      .withMessage("Refresh token must be a string"),
+  ],
 };
 
 // ============================================

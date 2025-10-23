@@ -5,6 +5,7 @@ import {
   LoginDTO,
   ChangePasswordDTO,
 } from "../services/AuthService";
+import { ValidationError } from "../utils/errors";
 
 export class AuthController {
   private _authService: AuthService;
@@ -75,6 +76,144 @@ export class AuthController {
       };
 
       const result = await this._authService.changePassword(userId, dto);
+      res.success(result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyEmail(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const token = req.query.token as string;
+
+      if (!token) {
+        throw new ValidationError("Token de verificación requerido");
+      }
+
+      const result = await this._authService.verifyEmail(token);
+      res.success(result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resendVerificationEmail(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const email = req.body.email as string;
+
+      if (!email) {
+        throw new ValidationError("Email requerido");
+      }
+
+      const result = await this._authService.resendVerificationEmail(email);
+      res.success(result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async forgotPassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const email = req.body.email as string;
+
+      if (!email) {
+        throw new ValidationError("Email requerido");
+      }
+
+      const result = await this._authService.forgotPassword(email);
+      res.success(result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resetPassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const token = req.body.token as string;
+      const newPassword = req.body.newPassword as string;
+
+      if (!token) {
+        throw new ValidationError("Token requerido");
+      }
+
+      if (!newPassword) {
+        throw new ValidationError("Nueva contraseña requerida");
+      }
+
+      const result = await this._authService.resetPassword({
+        token,
+        newPassword,
+      });
+      res.success(result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async refreshTokens(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const refreshToken = req.body.refreshToken as string;
+
+      if (!refreshToken) {
+        throw new ValidationError("Refresh token requerido");
+      }
+
+      const result = await this._authService.refreshTokens(refreshToken);
+      res.success(result, "Tokens renovados exitosamente", 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const refreshToken = req.body.refreshToken as string;
+
+      if (!refreshToken) {
+        throw new ValidationError("Refresh token requerido");
+      }
+
+      const result = await this._authService.logout(refreshToken);
+      res.success(result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logoutAll(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ message: "Usuario no autenticado" });
+        return;
+      }
+
+      const result = await this._authService.logoutAll(userId);
       res.success(result, result.message, 200);
     } catch (error) {
       next(error);
