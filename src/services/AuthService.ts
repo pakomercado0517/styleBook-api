@@ -31,6 +31,11 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface ChangePasswordDTO {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export class AuthService {
   private _jwtSecret = process.env.JWT_SECRET || "your-secret-key";
 
@@ -98,6 +103,44 @@ export class AuthService {
         role: user.role,
       },
       token,
+    };
+  }
+
+  async changePassword(
+    userId: number,
+    dto: ChangePasswordDTO
+  ): Promise<{ message: string }> {
+    // 1. Buscar usuario
+    const user = await Users.findByPk(userId);
+    if (!user) {
+      throw new NotFoundError("Usuario no encontrado");
+    }
+
+    // 2. Verificar contraseña actual
+    const isCurrentPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.password
+    );
+    if (!isCurrentPasswordValid) {
+      throw new AuthError("La contraseña actual es incorrecta");
+    }
+
+    // 3. Validar que la nueva contraseña sea diferente
+    const isSamePassword = await bcrypt.compare(dto.newPassword, user.password);
+    if (isSamePassword) {
+      throw new ValidationError(
+        "La nueva contraseña debe ser diferente a la actual"
+      );
+    }
+
+    // 4. Hash de la nueva contraseña
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    // 5. Actualizar contraseña
+    await user.update({ password: hashedPassword });
+
+    return {
+      message: "Contraseña actualizada exitosamente",
     };
   }
 

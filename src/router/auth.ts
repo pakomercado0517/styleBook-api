@@ -44,4 +44,19 @@ router.get(
     authController.profile(req, res, next)
 );
 
+/**
+ * PUT /auth/change-password
+ * Cambiar contraseña del usuario autenticado
+ * Headers: Authorization: Bearer {token}
+ * Body: { currentPassword, newPassword }
+ */
+router.put(
+  "/change-password",
+  authenticate,
+  authValidators.changePassword,
+  handleValidationErrors,
+  (req: Request, res: Response, next: NextFunction) =>
+    authController.changePassword(req, res, next)
+);
+
 export default router;

@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { AuthService, RegisterDTO, LoginDTO } from "../services/AuthService";
+import {
+  AuthService,
+  RegisterDTO,
+  LoginDTO,
+  ChangePasswordDTO,
+} from "../services/AuthService";
 
 export class AuthController {
   private _authService: AuthService;
@@ -49,5 +54,30 @@ export class AuthController {
     _next: NextFunction
   ): Promise<void> {
     res.success(req.user, "Perfil obtenido");
+  }
+
+  async changePassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({ message: "Usuario no autenticado" });
+        return;
+      }
+
+      const dto: ChangePasswordDTO = {
+        currentPassword: req.body.currentPassword,
+        newPassword: req.body.newPassword,
+      };
+
+      const result = await this._authService.changePassword(userId, dto);
+      res.success(result, result.message, 200);
+    } catch (error) {
+      next(error);
+    }
   }
 }

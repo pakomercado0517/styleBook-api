@@ -11,6 +11,7 @@ import reviewsRouter from "./router/reviews";
 import blockedHoursRouter from "./router/blockedHours";
 import availabilityRouter from "./router/availability";
 import favoritesRouter from "./router/favorites";
+import cors from "cors";
 
 export async function connectDB(): Promise<void> {
   try {
@@ -31,6 +32,14 @@ const app = express();
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: `${process.env.FRONTEND_URL}`,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Middleware de respuesta estándar
 app.use(responseMiddleware);
@@ -44,32 +53,16 @@ app.get("/health", (_req, res) => {
   res.success({ status: "ok", timestamp: new Date() }, "API en funcionamiento");
 });
 
-// Rutas de autenticación
-app.use("/auth", authRouter);
-
-// Rutas de usuarios
-app.use("/users", usersRouter);
-
-// Rutas de proveedores
-app.use("/providers", providersRouter);
-
-// Rutas de servicios
-app.use("/services", servicesRouter);
-
-// Rutas de citas
-app.use("/appointments", appointmentsRouter);
-
-// Rutas de reseñas
-app.use("/reviews", reviewsRouter);
-
-// Rutas de horarios bloqueados
-app.use("/blocked-hours", blockedHoursRouter);
-
-// Rutas de disponibilidad
-app.use("/availability", availabilityRouter);
-
-// Rutas de favoritos
-app.use("/favorites", favoritesRouter);
+// Rutas de la API con prefijo /api
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/providers", providersRouter);
+app.use("/api/services", servicesRouter);
+app.use("/api/appointments", appointmentsRouter);
+app.use("/api/reviews", reviewsRouter);
+app.use("/api/blocked-hours", blockedHoursRouter);
+app.use("/api/availability", availabilityRouter);
+app.use("/api/favorites", favoritesRouter);
 
 // Ruta no encontrada
 app.use((_req, res) => {
