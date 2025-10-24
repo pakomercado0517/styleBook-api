@@ -17,7 +17,7 @@ import cors from "cors";
 export async function connectDB(): Promise<void> {
   try {
     await db.authenticate();
-    await db.sync({ alter: true, force: true });
+    await db.sync({ alter: true, force: false });
     console.log("✅ Conexión exitosa a la base de datos");
   } catch (error) {
     console.error("❌ Error al conectar a la base de datos:", error);
