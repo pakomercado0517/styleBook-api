@@ -121,13 +121,3 @@ export default Appointments;
 
 
 
-
-
-
-
-
-
-
-
-
-
