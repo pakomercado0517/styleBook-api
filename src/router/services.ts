@@ -9,7 +9,7 @@ const serviceController = new ServiceController();
 /**
  * GET /services/search
  * Buscar servicios con filtros avanzados
- * Query: ?search=corte&price_min=10&price_max=100&city=Madrid&sort_by=price_asc&limit=20&offset=0
+ * Query: ?search=corte&price_min=10&price_max=100&category=corte&city=Madrid&sort_by=price_asc&limit=20&offset=0
  */
 router.get("/search", (req: Request, res: Response, next: NextFunction) =>
   serviceController.searchServices(req, res, next)
@@ -18,7 +18,7 @@ router.get("/search", (req: Request, res: Response, next: NextFunction) =>
 /**
  * GET /services
  * Obtener todos los servicios (paginado)
- * Query: ?page=1&limit=20&provider_id=7&price_min=100&price_max=500
+ * Query: ?limit=20&offset=0&category=corte&provider_id=7&is_active=true
  */
 router.get("/", (req: Request, res: Response, next: NextFunction) =>
   serviceController.getAllServices(req, res, next)

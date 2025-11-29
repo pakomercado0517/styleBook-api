@@ -48,6 +48,42 @@ class Services extends Model {
   })
   declare price: number;
 
+  @AllowNull(false)
+  @Column({
+    type: DataType.ENUM(
+      "corte",
+      "tinte",
+      "peinado",
+      "manicure",
+      "pedicure",
+      "tratamiento_capilar",
+      "barba",
+      "afeitado",
+      "masaje",
+      "facial",
+      "corporal",
+      "aromaterapia",
+      "limpieza_dental",
+      "estetica_dental"
+    ),
+  })
+  declare category:
+    | "corte"
+    | "tinte"
+    | "peinado"
+    | "manicure"
+    | "pedicure"
+    | "tratamiento_capilar"
+    | "barba"
+    | "afeitado"
+    | "masaje"
+    | "facial"
+    | "corporal"
+    | "aromaterapia"
+    | "limpieza_dental"
+    | "estetica_dental"
+    | "asesoria";
+
   @AllowNull(true)
   @Column({
     type: DataType.STRING,
@@ -70,5 +106,3 @@ class Services extends Model {
 }
 
 export default Services;
-
-

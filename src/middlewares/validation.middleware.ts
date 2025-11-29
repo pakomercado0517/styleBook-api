@@ -75,6 +75,27 @@ export const validators = {
       .isInt({ min: 15 })
       .withMessage("Duración mínimo 15 minutos"),
     body("price").isDecimal().withMessage("Precio debe ser un número decimal"),
+    body("category")
+      .notEmpty()
+      .withMessage("Categoría requerida")
+      .isIn([
+        "corte",
+        "tinte",
+        "peinado",
+        "manicure",
+        "pedicure",
+        "tratamiento_capilar",
+        "barba",
+        "afeitado",
+        "masaje",
+        "facial",
+        "corporal",
+        "aromaterapia",
+        "limpieza_dental",
+        "estetica_dental",
+        "asesoria",
+      ])
+      .withMessage("Categoría inválida"),
   ],
 
   // Appointments

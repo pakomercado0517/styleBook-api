@@ -8,6 +8,22 @@ export interface CreateServiceDTO {
   description?: string;
   duration_minutes: number;
   price: number;
+  category:
+    | "corte"
+    | "tinte"
+    | "peinado"
+    | "manicure"
+    | "pedicure"
+    | "tratamiento_capilar"
+    | "barba"
+    | "afeitado"
+    | "masaje"
+    | "facial"
+    | "corporal"
+    | "aromaterapia"
+    | "limpieza_dental"
+    | "estetica_dental"
+    | "asesoria";
   image_url?: string;
 }
 
@@ -16,6 +32,22 @@ export interface UpdateServiceDTO {
   description?: string;
   duration_minutes?: number;
   price?: number;
+  category?:
+    | "corte"
+    | "tinte"
+    | "peinado"
+    | "manicure"
+    | "pedicure"
+    | "tratamiento_capilar"
+    | "barba"
+    | "afeitado"
+    | "masaje"
+    | "facial"
+    | "corporal"
+    | "aromaterapia"
+    | "limpieza_dental"
+    | "estetica_dental"
+    | "asesoria";
   image_url?: string;
   is_active?: boolean;
 }
@@ -25,6 +57,22 @@ export interface SearchServicesDTO {
   price_min?: number;
   price_max?: number;
   provider_id?: number;
+  category?:
+    | "corte"
+    | "tinte"
+    | "peinado"
+    | "manicure"
+    | "pedicure"
+    | "tratamiento_capilar"
+    | "barba"
+    | "afeitado"
+    | "masaje"
+    | "facial"
+    | "corporal"
+    | "aromaterapia"
+    | "limpieza_dental"
+    | "estetica_dental"
+    | "asesoria";
   city?: string;
   sort_by?: "price_asc" | "price_desc" | "name" | "rating" | "newest";
   limit?: number;
@@ -46,6 +94,7 @@ export class ServiceService {
         description: dto.description,
         duration_minutes: dto.duration_minutes,
         price: dto.price,
+        category: dto.category,
         image_url: dto.image_url,
       });
 
@@ -56,9 +105,47 @@ export class ServiceService {
     }
   }
 
-  async getAllServices(limit: number = 10, offset: number = 0) {
+  async getAllServices(
+    limit: number = 10,
+    offset: number = 0,
+    filters?: {
+      category?:
+        | "corte"
+        | "tinte"
+        | "peinado"
+        | "manicure"
+        | "pedicure"
+        | "tratamiento_capilar"
+        | "barba"
+        | "afeitado"
+        | "masaje"
+        | "facial"
+        | "corporal"
+        | "aromaterapia"
+        | "limpieza_dental"
+        | "estetica_dental"
+        | "asesoria";
+      provider_id?: number;
+      is_active?: boolean;
+    }
+  ) {
     try {
+      const whereClause: any = {};
+
+      if (filters?.category) {
+        whereClause.category = filters.category;
+      }
+
+      if (filters?.provider_id) {
+        whereClause.provider_id = filters.provider_id;
+      }
+
+      if (filters?.is_active !== undefined) {
+        whereClause.is_active = filters.is_active;
+      }
+
       const { count, rows } = await Services.findAndCountAll({
+        where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
         limit,
         offset,
         include: [{ model: Providers, attributes: ["id", "business_name"] }],
@@ -104,6 +191,11 @@ export class ServiceService {
       // Filtro por proveedor específico
       if (dto.provider_id) {
         whereClause.provider_id = dto.provider_id;
+      }
+
+      // Filtro por categoría
+      if (dto.category) {
+        whereClause.category = dto.category;
       }
 
       // Filtro por ciudad del proveedor

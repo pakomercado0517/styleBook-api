@@ -596,6 +596,28 @@ export const serviceValidators = {
       .isInt({ min: 1 })
       .withMessage("Duration must be a positive integer"),
 
+    body("category")
+      .notEmpty()
+      .withMessage("Category is required")
+      .isIn([
+        "corte",
+        "tinte",
+        "peinado",
+        "manicure",
+        "pedicure",
+        "tratamiento_capilar",
+        "barba",
+        "afeitado",
+        "masaje",
+        "facial",
+        "corporal",
+        "aromaterapia",
+        "limpieza_dental",
+        "estetica_dental",
+        "asesoria",
+      ])
+      .withMessage("Invalid category value"),
+
     body("provider_id")
       .notEmpty()
       .withMessage("Provider ID is required")
@@ -627,6 +649,27 @@ export const serviceValidators = {
       .optional()
       .isInt({ min: 1 })
       .withMessage("Duration must be a positive integer"),
+
+    body("category")
+      .optional()
+      .isIn([
+        "corte",
+        "tinte",
+        "peinado",
+        "manicure",
+        "pedicure",
+        "tratamiento_capilar",
+        "barba",
+        "afeitado",
+        "masaje",
+        "facial",
+        "corporal",
+        "aromaterapia",
+        "limpieza_dental",
+        "estetica_dental",
+        "asesoria",
+      ])
+      .withMessage("Invalid category value"),
   ],
 
   getById: [

@@ -38,8 +38,42 @@ export class ServiceController {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const offset = parseInt(req.query.offset as string) || 0;
+      const category = req.query.category as
+        | "corte"
+        | "tinte"
+        | "peinado"
+        | "manicure"
+        | "pedicure"
+        | "tratamiento_capilar"
+        | "barba"
+        | "afeitado"
+        | "masaje"
+        | "facial"
+        | "corporal"
+        | "aromaterapia"
+        | "limpieza_dental"
+        | "estetica_dental"
+        | "asesoria"
+        | undefined;
+      const provider_id = req.query.provider_id
+        ? parseInt(req.query.provider_id as string)
+        : undefined;
+      const is_active =
+        req.query.is_active !== undefined
+          ? req.query.is_active === "true" || req.query.is_active === "1"
+          : undefined;
 
-      const result = await this._serviceService.getAllServices(limit, offset);
+      const filters = {
+        ...(category && { category }),
+        ...(provider_id && { provider_id }),
+        ...(is_active !== undefined && { is_active }),
+      };
+
+      const result = await this._serviceService.getAllServices(
+        limit,
+        offset,
+        Object.keys(filters).length > 0 ? filters : undefined
+      );
 
       res.success(result, "Servicios obtenidos", 200);
     } catch (error) {
@@ -58,6 +92,7 @@ export class ServiceController {
         price_min: req.query.price_min ? parseFloat(req.query.price_min as string) : undefined,
         price_max: req.query.price_max ? parseFloat(req.query.price_max as string) : undefined,
         provider_id: req.query.provider_id ? parseInt(req.query.provider_id as string) : undefined,
+        category: req.query.category as SearchServicesDTO["category"],
         city: req.query.city as string,
         sort_by: (req.query.sort_by as SearchServicesDTO["sort_by"]) || "newest",
         limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
