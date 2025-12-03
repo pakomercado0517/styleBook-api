@@ -3,6 +3,7 @@ import {
   AppointmentService,
   CreateAppointmentDTO,
   UpdateAppointmentDTO,
+  RescheduleAppointmentDTO,
 } from "../services/AppointmentService";
 
 export class AppointmentController {
@@ -251,6 +252,50 @@ export class AppointmentController {
         );
 
       res.success(result, "Citas pendientes obtenidas exitosamente", 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PUT /appointments/:id/reschedule
+   * Reagendar una cita (cambiar fecha/hora y opcionalmente empleado)
+   */
+  async rescheduleAppointment(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const userId = req.user?.id;
+
+      if (isNaN(appointmentId)) {
+        res.status(400).json({ error: "Invalid appointment ID" });
+        return;
+      }
+
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const dto: RescheduleAppointmentDTO = req.body;
+
+      if (!dto.start_date || !dto.end_date) {
+        res.status(400).json({
+          error: "Missing required fields: start_date, end_date",
+        });
+        return;
+      }
+
+      const appointment = await this._appointmentService.rescheduleAppointment(
+        appointmentId,
+        userId,
+        dto
+      );
+
+      res.success(appointment, "Cita reagendada exitosamente", 200);
     } catch (error) {
       next(error);
     }

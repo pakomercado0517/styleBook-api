@@ -66,6 +66,21 @@ router.put(
 );
 
 /**
+ * PUT /appointments/:id/reschedule
+ * Reagendar una cita (cambiar fecha/hora y opcionalmente empleado)
+ * Headers: Authorization: Bearer {token}
+ * Body: { start_date, end_date, employee_id? }
+ */
+router.put(
+  "/:id/reschedule",
+  authenticate,
+  appointmentValidators.reschedule,
+  handleValidationErrors,
+  (req: Request, res: Response, next: NextFunction) =>
+    appointmentController.rescheduleAppointment(req, res, next)
+);
+
+/**
  * DELETE /appointments/:id
  * Cancelar una cita
  * Headers: Authorization: Bearer {token}

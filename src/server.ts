@@ -12,6 +12,7 @@ import blockedHoursRouter from "./router/blockedHours";
 import availabilityRouter from "./router/availability";
 import favoritesRouter from "./router/favorites";
 import emailTestRouter from "./router/emailTestRouter";
+import employeesRouter from "./router/employees";
 import cors from "cors";
 
 export async function connectDB(): Promise<void> {
@@ -65,6 +66,7 @@ app.use("/api/blocked-hours", blockedHoursRouter);
 app.use("/api/availability", availabilityRouter);
 app.use("/api/favorites", favoritesRouter);
 app.use("/api/emails", emailTestRouter); // Email testing routes
+app.use("/api/employees", employeesRouter);
 
 // Ruta no encontrada
 app.use((_req, res) => {

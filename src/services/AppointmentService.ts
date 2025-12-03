@@ -9,6 +9,7 @@ import {
   datesOverlap,
 } from "../utils/dateUtils";
 import { AppError } from "../utils/errors";
+import { Op } from "sequelize";
 
 export interface CreateAppointmentDTO {
   service_id: number;
@@ -20,6 +21,12 @@ export interface CreateAppointmentDTO {
 export interface UpdateAppointmentDTO {
   status?: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
   notes?: string;
+}
+
+export interface RescheduleAppointmentDTO {
+  start_date: string;
+  end_date: string;
+  employee_id?: number;
 }
 
 export interface AppointmentResponse {
@@ -343,6 +350,122 @@ export class AppointmentService {
       ),
       total: count,
     };
+  }
+
+  /**
+   * Reagendar una cita (cambiar fecha/hora y opcionalmente empleado)
+   * Solo se puede reagendar si la cita no está completada o cancelada
+   * @throws Error si la cita no existe, está completada/cancelada, o hay conflicto de horario
+   */
+  async rescheduleAppointment(
+    appointmentId: number,
+    userId: number,
+    dto: RescheduleAppointmentDTO
+  ): Promise<AppointmentResponse> {
+    // 1. Obtener la cita
+    const appointment = await Appointments.findByPk(appointmentId);
+    if (!appointment) {
+      throw new AppError(`Cita ${appointmentId} no encontrada`, 404);
+    }
+
+    // 2. Validar permisos: solo el cliente o el proveedor pueden reagendar
+    if (
+      appointment.client_id !== userId &&
+      appointment.provider_id !== userId
+    ) {
+      throw new AppError("No tienes permisos para reagendar esta cita", 403);
+    }
+
+    // 3. Validar que la cita no esté completada o cancelada
+    if (appointment.status === "completed") {
+      throw new AppError("No se puede reagendar una cita completada", 409);
+    }
+
+    if (appointment.status === "cancelled") {
+      throw new AppError("No se puede reagendar una cita cancelada", 409);
+    }
+
+    // 4. Obtener información del cliente para timezone
+    const client = await Users.findByPk(appointment.client_id);
+    if (!client) {
+      throw new AppError(`Cliente no encontrado para la cita`, 404);
+    }
+
+    // 5. Obtener información del servicio
+    const service = await Services.findByPk(appointment.service_id);
+    if (!service) {
+      throw new AppError(`Servicio no encontrado`, 404);
+    }
+
+    // 6. Determinar el empleado (usar el nuevo si se proporciona, sino mantener el actual)
+    const employeeId = dto.employee_id || appointment.employee_id;
+    const employee = await Employees.findByPk(employeeId);
+    if (!employee) {
+      throw new AppError(`Empleado ${employeeId} no encontrado`, 404);
+    }
+
+    // 7. Validar que el empleado pertenezca al mismo proveedor
+    if (employee.provider_id !== appointment.provider_id) {
+      throw new AppError("El empleado debe pertenecer al mismo proveedor", 400);
+    }
+
+    // 8. Convertir fechas de timezone local a UTC
+    const startUtc = localToUtc(dto.start_date, client.timezone);
+    const endUtc = localToUtc(dto.end_date, client.timezone);
+
+    // 9. Validar que la fecha de fin sea después de la de inicio
+    if (startUtc >= endUtc) {
+      throw new AppError(
+        "La fecha de fin debe ser posterior a la fecha de inicio",
+        400
+      );
+    }
+
+    // 10. Validar que la duración coincida con el servicio
+    const durationMinutes = Math.round(
+      (endUtc.getTime() - startUtc.getTime()) / (1000 * 60)
+    );
+    if (durationMinutes !== service.duration_minutes) {
+      throw new AppError(
+        `La duración debe ser ${service.duration_minutes} minutos`,
+        400
+      );
+    }
+
+    // 11. Verificar conflictos de horario (excluyendo la cita actual)
+    const conflicts = await Appointments.findAll({
+      where: {
+        employee_id: employeeId,
+        status: ["pending", "confirmed"],
+        id: { [Op.ne]: appointmentId },
+      },
+    });
+
+    const hasConflict = conflicts.some((apt: Appointments) =>
+      datesOverlap(startUtc, endUtc, apt.start_date, apt.end_date)
+    );
+
+    if (hasConflict) {
+      throw new AppError(
+        "El nuevo horario no está disponible (conflicto con otra cita)",
+        409
+      );
+    }
+
+    // 12. Actualizar la cita
+    appointment.start_date = startUtc;
+    appointment.end_date = endUtc;
+    appointment.employee_id = employeeId;
+
+    // 13. Si la cita estaba confirmada, cambiar a pending para que el proveedor confirme de nuevo
+    if (appointment.status === "confirmed") {
+      appointment.status = "pending";
+    }
+
+    await appointment.save();
+
+    // 14. Retornar con conversiones
+    return this._mapToResponse(appointment, client.timezone);
   }
 
   /**

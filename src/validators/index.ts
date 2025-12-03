@@ -267,6 +267,27 @@ export const appointmentValidators = {
       .withMessage("Notes must not exceed 500 characters"),
   ],
 
+  reschedule: [
+    param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
+
+    body("start_date")
+      .notEmpty()
+      .withMessage("Start date is required")
+      .isISO8601()
+      .withMessage("Start date must be a valid ISO 8601 date"),
+
+    body("end_date")
+      .notEmpty()
+      .withMessage("End date is required")
+      .isISO8601()
+      .withMessage("End date must be a valid ISO 8601 date"),
+
+    body("employee_id")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Employee ID must be a positive integer"),
+  ],
+
   getPaginated: [
     query("page")
       .optional()
@@ -674,6 +695,116 @@ export const serviceValidators = {
 
   getById: [
     param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
+  ],
+
+  delete: [
+    param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
+  ],
+};
+
+// ============================================
+// EMPLOYEES VALIDATORS
+// ============================================
+
+export const employeeValidators = {
+  create: [
+    body("provider_id")
+      .notEmpty()
+      .withMessage("Provider ID is required")
+      .isInt({ min: 1 })
+      .withMessage("Provider ID must be a positive integer"),
+
+    body("name")
+      .trim()
+      .notEmpty()
+      .withMessage("Name is required")
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Name must be between 2 and 50 characters"),
+
+    body("email")
+      .trim()
+      .notEmpty()
+      .withMessage("Email is required")
+      .isEmail()
+      .withMessage("Invalid email format")
+      .normalizeEmail(),
+
+    body("phone")
+      .optional()
+      .trim()
+      .matches(/^[0-9\-\+\(\)\s]+$/)
+      .withMessage("Invalid phone format")
+      .isLength({ max: 20 })
+      .withMessage("Phone must not exceed 20 characters"),
+
+    body("specialty")
+      .optional()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage("Specialty must not exceed 50 characters"),
+
+    body("photo_url")
+      .optional()
+      .trim()
+      .isURL()
+      .withMessage("Invalid photo URL"),
+  ],
+
+  update: [
+    param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
+
+    body("name")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 50 })
+      .withMessage("Name must be between 2 and 50 characters"),
+
+    body("email")
+      .optional()
+      .trim()
+      .isEmail()
+      .withMessage("Invalid email format")
+      .normalizeEmail(),
+
+    body("phone")
+      .optional()
+      .trim()
+      .matches(/^[0-9\-\+\(\)\s]+$/)
+      .withMessage("Invalid phone format")
+      .isLength({ max: 20 })
+      .withMessage("Phone must not exceed 20 characters"),
+
+    body("specialty")
+      .optional()
+      .trim()
+      .isLength({ max: 50 })
+      .withMessage("Specialty must not exceed 50 characters"),
+
+    body("photo_url")
+      .optional()
+      .trim()
+      .isURL()
+      .withMessage("Invalid photo URL"),
+  ],
+
+  getById: [
+    param("id").isInt({ min: 1 }).withMessage("ID must be a positive integer"),
+  ],
+
+  getByProvider: [
+    param("provider_id")
+      .isInt({ min: 1 })
+      .withMessage("Provider ID must be a positive integer"),
+
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1 and 100"),
+
+    query("offset")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Offset must be a non-negative integer"),
   ],
 
   delete: [
