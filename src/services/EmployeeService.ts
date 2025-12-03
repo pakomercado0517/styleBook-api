@@ -54,10 +54,7 @@ export class EmployeeService {
 
       return employee;
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof ConflictError
-      ) {
+      if (error instanceof NotFoundError || error instanceof ConflictError) {
         throw error;
       }
       throw new AppError("Error al crear empleado", 500);
@@ -182,10 +179,7 @@ export class EmployeeService {
 
       return employee;
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof ConflictError
-      ) {
+      if (error instanceof NotFoundError || error instanceof ConflictError) {
         throw error;
       }
       throw new AppError("Error al actualizar empleado", 500);
@@ -209,4 +203,3 @@ export class EmployeeService {
     }
   }
 }
-

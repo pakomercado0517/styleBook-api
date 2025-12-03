@@ -45,9 +45,13 @@ export class EmployeeController {
         ? parseInt(req.query.provider_id as string)
         : undefined;
 
-      const result = await this._employeeService.getAllEmployees(limit, offset, {
-        provider_id: providerId,
-      });
+      const result = await this._employeeService.getAllEmployees(
+        limit,
+        offset,
+        {
+          provider_id: providerId,
+        }
+      );
 
       res.success(result, "Empleados obtenidos", 200);
     } catch (error) {
@@ -129,4 +133,3 @@ export class EmployeeController {
     }
   }
 }
-
