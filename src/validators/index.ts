@@ -592,6 +592,10 @@ export const providerValidators = {
 
 export const serviceValidators = {
   create: [
+    param("providerId")
+      .isInt({ min: 1 })
+      .withMessage("Provider ID must be a positive integer"),
+
     body("name")
       .trim()
       .notEmpty()
@@ -638,12 +642,6 @@ export const serviceValidators = {
         "asesoria",
       ])
       .withMessage("Invalid category value"),
-
-    body("provider_id")
-      .notEmpty()
-      .withMessage("Provider ID is required")
-      .isInt({ min: 1 })
-      .withMessage("Provider ID must be a positive integer"),
   ],
 
   update: [

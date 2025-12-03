@@ -2,6 +2,7 @@ import Appointments from "../models/Appointments";
 import Users from "../models/Users";
 import Services from "../models/Services";
 import Employees from "../models/Employees";
+import Providers from "../models/Providers";
 import {
   localToUtc,
   utcToLocal,
@@ -49,6 +50,37 @@ export interface AppointmentResponse {
   timezone: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AppointmentWithDetailsResponse extends AppointmentResponse {
+  service: {
+    id: number;
+    name: string;
+    description: string | null;
+    price: number;
+    duration_minutes: number;
+    category: string;
+    image_url: string | null;
+  };
+  provider: {
+    id: number;
+    business_name: string;
+    description: string | null;
+    business_type: string | null;
+    address: string | null;
+    city: string | null;
+    country: string | null;
+    average_rating: number | null;
+  };
+  employee: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string | null;
+    specialty: string | null;
+    photo_url: string | null;
+    rating: number | null;
+  } | null;
 }
 
 export class AppointmentService {
@@ -128,20 +160,70 @@ export class AppointmentService {
   }
 
   /**
-   * Obtener todas las citas del cliente
+   * Obtener todas las citas del cliente con datos relacionados
+   * @param employee_id - Filtro opcional por empleado
    */
   async getClientAppointments(
     clientId: number,
     page: number = 1,
-    limit: number = 20
-  ): Promise<{ appointments: AppointmentResponse[]; total: number }> {
+    limit: number = 20,
+    employee_id?: number
+  ): Promise<{ appointments: AppointmentWithDetailsResponse[]; total: number }> {
     const client = await Users.findByPk(clientId);
     if (!client) {
       throw new Error(`Client ${clientId} not found`);
     }
 
+    const whereClause: any = { client_id: clientId };
+    if (employee_id) {
+      whereClause.employee_id = employee_id;
+    }
+
     const { count, rows } = await Appointments.findAndCountAll({
-      where: { client_id: clientId },
+      where: whereClause,
+      include: [
+        {
+          model: Services,
+          as: "service",
+          attributes: [
+            "id",
+            "name",
+            "description",
+            "price",
+            "duration_minutes",
+            "category",
+            "image_url",
+          ],
+        },
+        {
+          model: Providers,
+          as: "provider",
+          attributes: [
+            "id",
+            "business_name",
+            "description",
+            "business_type",
+            "address",
+            "city",
+            "country",
+            "average_rating",
+          ],
+        },
+        {
+          model: Employees,
+          as: "employee",
+          required: false,
+          attributes: [
+            "id",
+            "name",
+            "email",
+            "phone",
+            "specialty",
+            "photo_url",
+            "rating",
+          ],
+        },
+      ],
       offset: (page - 1) * limit,
       limit,
       order: [["start_date", "DESC"]],
@@ -149,19 +231,64 @@ export class AppointmentService {
 
     return {
       appointments: rows.map((apt: Appointments) =>
-        this._mapToResponse(apt, client.timezone)
+        this._mapToClientResponse(apt, client.timezone)
       ),
       total: count,
     };
   }
 
   /**
-   * Obtener una cita por ID
+   * Obtener una cita por ID con datos relacionados
    */
   async getAppointmentById(
     appointmentId: number
-  ): Promise<AppointmentResponse> {
-    const appointment = await Appointments.findByPk(appointmentId);
+  ): Promise<AppointmentWithDetailsResponse> {
+    const appointment = await Appointments.findByPk(appointmentId, {
+      include: [
+        {
+          model: Services,
+          as: "service",
+          attributes: [
+            "id",
+            "name",
+            "description",
+            "price",
+            "duration_minutes",
+            "category",
+            "image_url",
+          ],
+        },
+        {
+          model: Providers,
+          as: "provider",
+          attributes: [
+            "id",
+            "business_name",
+            "description",
+            "business_type",
+            "address",
+            "city",
+            "country",
+            "average_rating",
+          ],
+        },
+        {
+          model: Employees,
+          as: "employee",
+          required: false,
+          attributes: [
+            "id",
+            "name",
+            "email",
+            "phone",
+            "specialty",
+            "photo_url",
+            "rating",
+          ],
+        },
+      ],
+    });
+
     if (!appointment) {
       throw new Error(`Appointment ${appointmentId} not found`);
     }
@@ -171,7 +298,7 @@ export class AppointmentService {
       throw new Error(`Client not found for appointment ${appointmentId}`);
     }
 
-    return this._mapToResponse(appointment, client.timezone);
+    return this._mapToClientResponse(appointment, client.timezone);
   }
 
   /**
@@ -270,23 +397,74 @@ export class AppointmentService {
   }
 
   /**
-   * Obtener todas las citas pendientes de un proveedor
+   * Obtener todas las citas pendientes de un proveedor con datos relacionados
    * Útil para que el proveedor vea qué citas necesita confirmar
+   * @param employee_id - Filtro opcional por empleado
    */
   async getProviderPendingAppointments(
     providerId: number,
     limit: number = 20,
-    offset: number = 0
+    offset: number = 0,
+    employee_id?: number
   ): Promise<{
-    appointments: AppointmentResponse[];
+    appointments: AppointmentWithDetailsResponse[];
     total: number;
     pending_count: number;
   }> {
+    const whereClause: any = {
+      provider_id: providerId,
+      status: "pending",
+    };
+
+    if (employee_id) {
+      whereClause.employee_id = employee_id;
+    }
+
     const { count, rows } = await Appointments.findAndCountAll({
-      where: {
-        provider_id: providerId,
-        status: "pending",
-      },
+      where: whereClause,
+      include: [
+        {
+          model: Services,
+          as: "service",
+          attributes: [
+            "id",
+            "name",
+            "description",
+            "price",
+            "duration_minutes",
+            "category",
+            "image_url",
+          ],
+        },
+        {
+          model: Providers,
+          as: "provider",
+          attributes: [
+            "id",
+            "business_name",
+            "description",
+            "business_type",
+            "address",
+            "city",
+            "country",
+            "average_rating",
+          ],
+        },
+        {
+          model: Employees,
+          as: "employee",
+          required: false,
+          attributes: [
+            "id",
+            "name",
+            "email",
+            "phone",
+            "specialty",
+            "photo_url",
+            "rating",
+          ],
+        },
+      ],
       limit,
       offset,
       order: [["start_date", "ASC"]],
@@ -303,7 +481,7 @@ export class AppointmentService {
 
     return {
       appointments: rows.map((apt: Appointments) =>
-        this._mapToResponse(apt, defaultTimezone)
+        this._mapToClientResponse(apt, defaultTimezone)
       ),
       total: count,
       pending_count: rows.length,
@@ -311,15 +489,17 @@ export class AppointmentService {
   }
 
   /**
-   * Obtener todas las citas de un proveedor (confirmadas y pendientes)
+   * Obtener todas las citas de un proveedor con datos relacionados
+   * @param employee_id - Filtro opcional por empleado
    */
   async getProviderAppointments(
     providerId: number,
     status?: "pending" | "confirmed" | "completed" | "cancelled" | "no_show",
     limit: number = 20,
-    offset: number = 0
+    offset: number = 0,
+    employee_id?: number
   ): Promise<{
-    appointments: AppointmentResponse[];
+    appointments: AppointmentWithDetailsResponse[];
     total: number;
   }> {
     const whereClause: any = { provider_id: providerId };
@@ -328,8 +508,55 @@ export class AppointmentService {
       whereClause.status = status;
     }
 
+    if (employee_id) {
+      whereClause.employee_id = employee_id;
+    }
+
     const { count, rows } = await Appointments.findAndCountAll({
       where: whereClause,
+      include: [
+        {
+          model: Services,
+          as: "service",
+          attributes: [
+            "id",
+            "name",
+            "description",
+            "price",
+            "duration_minutes",
+            "category",
+            "image_url",
+          ],
+        },
+        {
+          model: Providers,
+          as: "provider",
+          attributes: [
+            "id",
+            "business_name",
+            "description",
+            "business_type",
+            "address",
+            "city",
+            "country",
+            "average_rating",
+          ],
+        },
+        {
+          model: Employees,
+          as: "employee",
+          required: false,
+          attributes: [
+            "id",
+            "name",
+            "email",
+            "phone",
+            "specialty",
+            "photo_url",
+            "rating",
+          ],
+        },
+      ],
       limit,
       offset,
       order: [["start_date", "DESC"]],
@@ -346,7 +573,7 @@ export class AppointmentService {
 
     return {
       appointments: rows.map((apt: Appointments) =>
-        this._mapToResponse(apt, defaultTimezone)
+        this._mapToClientResponse(apt, defaultTimezone)
       ),
       total: count,
     };
@@ -506,6 +733,71 @@ export class AppointmentService {
       timezone,
       createdAt: appointment.createdAt,
       updatedAt: appointment.updatedAt,
+    };
+  }
+
+  /**
+   * Mapear cita con datos relacionados para respuesta del cliente
+   */
+  private _mapToClientResponse(
+    appointment: Appointments,
+    timezone: string
+  ): AppointmentWithDetailsResponse {
+    const baseResponse = this._mapToResponse(appointment, timezone);
+
+    return {
+      ...baseResponse,
+      service: appointment.service
+        ? {
+            id: appointment.service.id,
+            name: appointment.service.name,
+            description: appointment.service.description,
+            price: appointment.service.price,
+            duration_minutes: appointment.service.duration_minutes,
+            category: appointment.service.category,
+            image_url: appointment.service.image_url,
+          }
+        : {
+            id: appointment.service_id,
+            name: "",
+            description: null,
+            price: 0,
+            duration_minutes: 0,
+            category: "",
+            image_url: null,
+          },
+      provider: appointment.provider
+        ? {
+            id: appointment.provider.id,
+            business_name: appointment.provider.business_name,
+            description: appointment.provider.description,
+            business_type: appointment.provider.business_type,
+            address: appointment.provider.address,
+            city: appointment.provider.city,
+            country: appointment.provider.country,
+            average_rating: appointment.provider.average_rating,
+          }
+        : {
+            id: appointment.provider_id,
+            business_name: "",
+            description: null,
+            business_type: null,
+            address: null,
+            city: null,
+            country: null,
+            average_rating: null,
+          },
+      employee: appointment.employee
+        ? {
+            id: appointment.employee.id,
+            name: appointment.employee.name,
+            email: appointment.employee.email,
+            phone: appointment.employee.phone,
+            specialty: appointment.employee.specialty,
+            photo_url: appointment.employee.photo_url,
+            rating: appointment.employee.rating,
+          }
+        : null,
     };
   }
 }

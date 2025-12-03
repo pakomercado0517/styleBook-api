@@ -5,6 +5,7 @@ import {
   UpdateAppointmentDTO,
   RescheduleAppointmentDTO,
 } from "../services/AppointmentService";
+import Providers from "../models/Providers";
 
 export class AppointmentController {
   private _appointmentService: AppointmentService;
@@ -73,16 +74,25 @@ export class AppointmentController {
 
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
+      const employeeId = req.query.employee_id
+        ? parseInt(req.query.employee_id as string)
+        : undefined;
 
       if (limit > 100) {
         res.status(400).json({ error: "Limit cannot exceed 100" });
         return;
       }
 
+      if (employeeId && isNaN(employeeId)) {
+        res.status(400).json({ error: "Invalid employee_id" });
+        return;
+      }
+
       const result = await this._appointmentService.getClientAppointments(
         clientId,
         page,
-        limit
+        limit,
+        employeeId
       );
 
       res.success(
@@ -196,17 +206,29 @@ export class AppointmentController {
   ): Promise<void> {
     try {
       const appointmentId = parseInt(req.params.id);
-      const providerId = req.user?.id;
+      const userId = req.user?.id;
 
       if (isNaN(appointmentId)) {
         res.status(400).json({ error: "Invalid appointment ID" });
         return;
       }
 
-      if (!providerId) {
+      if (!userId) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
+
+      // Obtener el provider_id desde el user_id
+      const provider = await Providers.findOne({
+        where: { user_id: userId },
+      });
+
+      if (!provider) {
+        res.status(404).json({ error: "Proveedor no encontrado" });
+        return;
+      }
+
+      const providerId = provider.id;
 
       const appointment = await this._appointmentService.confirmAppointment(
         appointmentId,
@@ -229,18 +251,38 @@ export class AppointmentController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const providerId = req.user?.id;
+      const userId = req.user?.id;
 
-      if (!providerId) {
+      if (!userId) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
 
+      // Obtener el provider_id desde el user_id
+      const provider = await Providers.findOne({
+        where: { user_id: userId },
+      });
+
+      if (!provider) {
+        res.status(404).json({ error: "Proveedor no encontrado" });
+        return;
+      }
+
+      const providerId = provider.id;
+
       const limit = parseInt(req.query.limit as string) || 20;
       const offset = parseInt(req.query.offset as string) || 0;
+      const employeeId = req.query.employee_id
+        ? parseInt(req.query.employee_id as string)
+        : undefined;
 
       if (limit > 100) {
         res.status(400).json({ error: "Limit cannot exceed 100" });
+        return;
+      }
+
+      if (employeeId && isNaN(employeeId)) {
+        res.status(400).json({ error: "Invalid employee_id" });
         return;
       }
 
@@ -248,7 +290,8 @@ export class AppointmentController {
         await this._appointmentService.getProviderPendingAppointments(
           providerId,
           limit,
-          offset
+          offset,
+          employeeId
         );
 
       res.success(result, "Citas pendientes obtenidas exitosamente", 200);
@@ -311,19 +354,39 @@ export class AppointmentController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const providerId = req.user?.id;
+      const userId = req.user?.id;
 
-      if (!providerId) {
+      if (!userId) {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
 
+      // Obtener el provider_id desde el user_id
+      const provider = await Providers.findOne({
+        where: { user_id: userId },
+      });
+
+      if (!provider) {
+        res.status(404).json({ error: "Proveedor no encontrado" });
+        return;
+      }
+
+      const providerId = provider.id;
+
       const status = (req.query.status as string) || undefined;
       const limit = parseInt(req.query.limit as string) || 20;
       const offset = parseInt(req.query.offset as string) || 0;
+      const employeeId = req.query.employee_id
+        ? parseInt(req.query.employee_id as string)
+        : undefined;
 
       if (limit > 100) {
         res.status(400).json({ error: "Limit cannot exceed 100" });
+        return;
+      }
+
+      if (employeeId && isNaN(employeeId)) {
+        res.status(400).json({ error: "Invalid employee_id" });
         return;
       }
 
@@ -351,7 +414,8 @@ export class AppointmentController {
           | "no_show"
           | undefined,
         limit,
-        offset
+        offset,
+        employeeId
       );
 
       res.success(result, "Citas del proveedor obtenidas exitosamente", 200);
