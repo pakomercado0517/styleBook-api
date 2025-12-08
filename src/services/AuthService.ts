@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import Users from "../models/Users";
+import Clients from "../models/Clients";
+import Providers from "../models/Providers";
 import RefreshTokens from "../models/RefreshTokens";
 import {
   ValidationError,
@@ -128,21 +130,45 @@ export class AuthService {
     });
   }
 
+  /**
+   * Crea el perfil correspondiente según el rol del usuario
+   * @param userId - ID del usuario recién creado
+   * @param role - Rol del usuario (client, provider, admin)
+   * @param userName - Nombre completo del usuario (para provider business_name temporal)
+   */
+  private async _createUserProfile(
+    userId: number,
+    role: "client" | "provider" | "admin",
+    userName: string
+  ): Promise<void> {
+    if (role === "client") {
+      await Clients.create({ user_id: userId });
+      return;
+    }
+    if (role === "provider") {
+      await Providers.create({
+        user_id: userId,
+        business_name: userName,
+        is_active: true,
+      });
+    }
+  }
+
+  /**
+   * Registra un nuevo usuario en el sistema
+   * Crea el usuario y su perfil correspondiente (Client o Provider) según el rol
+   * @param dto - Datos de registro del usuario
+   * @returns Respuesta con usuario, access token y refresh token
+   * @throws ConflictError si el email ya está registrado
+   */
   async register(dto: RegisterDTO): Promise<AuthResponse> {
-    // 1. Validar que el email no exista
     const existingUser = await Users.findOne({ where: { email: dto.email } });
     if (existingUser) {
       throw new ConflictError("El email ya está registrado");
     }
-
-    // 2. Hash del password
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    // 3. Generar token de verificación
     const verificationToken = this._generateVerificationToken();
     const tokenExpiration = this._getVerificationTokenExpiration();
-
-    // 4. Crear usuario (sin verificar)
     const user = await Users.create({
       name: dto.name,
       apellido: dto.apellido,
@@ -155,8 +181,8 @@ export class AuthService {
       verification_token: verificationToken,
       verification_token_expires: tokenExpiration,
     });
-
-    // 5. Enviar email de verificación
+    const userName = `${dto.name} ${dto.apellido}`;
+    await this._createUserProfile(user.id, dto.role, userName);
     try {
       await emailService.sendVerificationEmail({
         toEmail: user.email,
@@ -165,17 +191,10 @@ export class AuthService {
       });
     } catch (error) {
       console.error("Error al enviar email de verificación:", error);
-      // No lanzamos error aquí para no bloquear el registro
-      // El usuario puede reenviar el email después
     }
-
-    // 6. Generar access token y refresh token
     const token = this.generateToken(user.id, user.email, user.role);
     const refreshToken = this._generateRefreshToken(user.id);
-
-    // 7. Guardar refresh token en BD
     await this._saveRefreshToken(user.id, refreshToken);
-
     return {
       user: {
         id: user.id,
