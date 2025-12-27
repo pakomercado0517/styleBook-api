@@ -1,5 +1,9 @@
 import Users from "../models/Users";
+import Providers from "../models/Providers";
+import Clients from "../models/Clients";
+import RefreshTokens from "../models/RefreshTokens";
 import { NotFoundError, AppError } from "../utils/errors";
+import { db } from "../config/db";
 
 export interface UserUpdateDTO {
   name?: string;
@@ -71,17 +75,44 @@ export class UserService {
   }
 
   async deleteUser(userId: number) {
+    const transaction = await db.transaction();
+
     try {
-      const user = await Users.findByPk(userId);
+      // 1. Verificar que el usuario existe
+      const user = await Users.findByPk(userId, { transaction });
 
       if (!user) {
+        await transaction.rollback();
         throw new NotFoundError("Usuario no encontrado");
       }
 
-      await user.destroy();
+      // 2. Eliminar RefreshTokens asociados
+      await RefreshTokens.destroy({
+        where: { user_id: userId },
+        transaction,
+      });
+
+      // 3. Eliminar perfil de Proveedor si existe (incluyendo el caso donde NO existe)
+      await Providers.destroy({
+        where: { user_id: userId },
+        transaction,
+      });
+
+      // 4. Eliminar perfil de Cliente si existe
+      await Clients.destroy({
+        where: { user_id: userId },
+        transaction,
+      });
+
+      // 5. Finalmente eliminar el usuario
+      await user.destroy({ transaction });
+
+      // 6. Commit de la transacción
+      await transaction.commit();
 
       return { message: "Usuario eliminado exitosamente" };
     } catch (error) {
+      await transaction.rollback();
       if (error instanceof NotFoundError) throw error;
       throw new AppError("Error al eliminar usuario", 500);
     }

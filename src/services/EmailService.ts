@@ -1,4 +1,4 @@
-import sgMail from "@sendgrid/mail";
+import * as brevo from "@getbrevo/brevo";
 import { formatInTimezone } from "../utils/dateUtils";
 
 // ==================== TIPOS E INTERFACES ====================
@@ -6,6 +6,7 @@ import { formatInTimezone } from "../utils/dateUtils";
 interface EmailConfig {
   apiKey: string;
   fromEmail: string;
+  fromName: string;
 }
 
 interface SendEmailParams {
@@ -87,28 +88,39 @@ interface NewReviewNotificationParams {
 export class EmailService {
   private _apiKey: string;
   private _fromEmail: string;
+  private _fromName: string;
   private _frontendUrl: string;
+  private _brevoApi: brevo.TransactionalEmailsApi;
 
   constructor(config: EmailConfig, frontendUrl: string) {
     this._apiKey = config.apiKey;
     this._fromEmail = config.fromEmail;
+    this._fromName = config.fromName;
     this._frontendUrl = frontendUrl;
-    sgMail.setApiKey(this._apiKey);
+
+    // Inicializar API de Brevo
+    this._brevoApi = new brevo.TransactionalEmailsApi();
+    this._brevoApi.setApiKey(
+      brevo.TransactionalEmailsApiApiKeys.apiKey,
+      this._apiKey
+    );
   }
 
   // ==================== MÉTODO BASE DE ENVÍO ====================
 
   private async _sendEmail(params: SendEmailParams): Promise<void> {
-    const msg = {
-      to: params.to,
-      from: this._fromEmail,
-      subject: params.subject,
-      html: params.html,
-      text: params.text || params.subject,
-    };
-
     try {
-      await sgMail.send(msg);
+      const sendSmtpEmail = new brevo.SendSmtpEmail();
+      sendSmtpEmail.sender = {
+        email: this._fromEmail,
+        name: this._fromName,
+      };
+      sendSmtpEmail.to = [{ email: params.to }];
+      sendSmtpEmail.subject = params.subject;
+      sendSmtpEmail.htmlContent = params.html;
+      sendSmtpEmail.textContent = params.text || params.subject;
+
+      await this._brevoApi.sendTransacEmail(sendSmtpEmail);
       console.log(`✅ Email enviado a ${params.to}: ${params.subject}`);
     } catch (error) {
       console.error(`❌ Error enviando email a ${params.to}:`, error);
@@ -257,6 +269,9 @@ export class EmailService {
           <p class="footer-text">© ${new Date().getFullYear()} StyleBook. Todos los derechos reservados.</p>
           <p class="footer-text">
             <a href="${this._frontendUrl}" class="footer-link">Visitar StyleBook</a>
+          </p>
+          <p class="footer-text" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(245, 245, 240, 0.1); font-size: 12px; color: #9CA3AF;">
+            Desarrollado por <a href="https://tresadesign.com" class="footer-link" style="color: #D4AF37;">TresA Design</a>
           </p>
         </div>
       </div>
@@ -639,8 +654,9 @@ export class EmailService {
 
 const emailService = new EmailService(
   {
-    apiKey: process.env.SENDGRID_API_KEY || "",
-    fromEmail: process.env.SENDGRID_FROM_EMAIL || "",
+    apiKey: process.env.BREVO_API_KEY || "",
+    fromEmail: process.env.BREVO_FROM_EMAIL || "",
+    fromName: process.env.BREVO_FROM_NAME || "StyleBook",
   },
   process.env.FRONTEND_URL || "http://localhost:3000"
 );

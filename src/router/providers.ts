@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { ProviderController } from "../controllers/ProviderController";
-import { authenticate } from "../middlewares";
+import { authenticate, authorize } from "../middlewares";
 import { providerValidators, handleValidationErrors } from "../validators";
 
 const router = express.Router();
@@ -36,6 +36,7 @@ router.get(
 router.post(
   "/",
   authenticate,
+  authorize(["provider"]),
   providerValidators.create,
   handleValidationErrors,
   (req: Request, res: Response, next: NextFunction) =>

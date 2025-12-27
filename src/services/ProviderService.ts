@@ -1,6 +1,11 @@
 import Providers from "../models/Providers";
 import Users from "../models/Users";
-import { NotFoundError, AppError, ConflictError } from "../utils/errors";
+import {
+  NotFoundError,
+  AppError,
+  ConflictError,
+  ForbiddenError,
+} from "../utils/errors";
 
 export interface CreateProviderDTO {
   business_name: string;
@@ -33,6 +38,13 @@ export class ProviderService {
         throw new NotFoundError("Usuario no encontrado");
       }
 
+      // Validar que el usuario tenga role="provider"
+      if (user.role !== "provider") {
+        throw new ForbiddenError(
+          "El usuario debe tener role 'provider' para crear un perfil de proveedor"
+        );
+      }
+
       // Verificar que el usuario no es ya provider
       const existingProvider = await Providers.findOne({
         where: { user_id: userId },
@@ -55,7 +67,11 @@ export class ProviderService {
 
       return provider;
     } catch (error) {
-      if (error instanceof NotFoundError || error instanceof ConflictError)
+      if (
+        error instanceof NotFoundError ||
+        error instanceof ConflictError ||
+        error instanceof ForbiddenError
+      )
         throw error;
       throw new AppError("Error al crear proveedor", 500);
     }
