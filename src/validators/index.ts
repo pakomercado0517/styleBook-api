@@ -298,6 +298,21 @@ export const appointmentValidators = {
       .optional()
       .isInt({ min: 1, max: 100 })
       .withMessage("Limit must be between 1 and 100"),
+
+    query("employee_id")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Employee ID must be a positive integer"),
+
+    query("past")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Past days must be a positive integer"),
+
+    query("filter")
+      .optional()
+      .isIn(["upcoming"])
+      .withMessage("Filter must be 'upcoming'"),
   ],
 
   getById: [

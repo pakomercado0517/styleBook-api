@@ -77,6 +77,10 @@ export class AppointmentController {
       const employeeId = req.query.employee_id
         ? parseInt(req.query.employee_id as string)
         : undefined;
+      const pastDays = req.query.past
+        ? parseInt(req.query.past as string)
+        : undefined;
+      const filter = req.query.filter as "upcoming" | undefined;
 
       if (limit > 100) {
         res.status(400).json({ error: "Limit cannot exceed 100" });
@@ -88,11 +92,23 @@ export class AppointmentController {
         return;
       }
 
+      if (pastDays !== undefined && (isNaN(pastDays) || pastDays < 1)) {
+        res.status(400).json({ error: "Past days must be a positive integer" });
+        return;
+      }
+
+      if (filter && filter !== "upcoming") {
+        res.status(400).json({ error: "Filter must be 'upcoming'" });
+        return;
+      }
+
       const result = await this._appointmentService.getClientAppointments(
         clientId,
         page,
         limit,
-        employeeId
+        employeeId,
+        pastDays,
+        filter
       );
 
       res.success(
@@ -379,6 +395,8 @@ export class AppointmentController {
       const employeeId = req.query.employee_id
         ? parseInt(req.query.employee_id as string)
         : undefined;
+      const startDate = req.query.start_date as string | undefined;
+      const endDate = req.query.end_date as string | undefined;
 
       if (limit > 100) {
         res.status(400).json({ error: "Limit cannot exceed 100" });
@@ -404,6 +422,33 @@ export class AppointmentController {
         return;
       }
 
+      // Validar fechas si se proporcionan
+      if (startDate) {
+        const startDateParsed = new Date(startDate);
+        if (isNaN(startDateParsed.getTime())) {
+          res.status(400).json({ error: "Invalid start_date format. Use ISO 8601 format" });
+          return;
+        }
+      }
+
+      if (endDate) {
+        const endDateParsed = new Date(endDate);
+        if (isNaN(endDateParsed.getTime())) {
+          res.status(400).json({ error: "Invalid end_date format. Use ISO 8601 format" });
+          return;
+        }
+      }
+
+      // Validar que start_date sea anterior a end_date
+      if (startDate && endDate) {
+        const startDateParsed = new Date(startDate);
+        const endDateParsed = new Date(endDate);
+        if (startDateParsed > endDateParsed) {
+          res.status(400).json({ error: "start_date must be before or equal to end_date" });
+          return;
+        }
+      }
+
       const result = await this._appointmentService.getProviderAppointments(
         providerId,
         status as
@@ -415,10 +460,24 @@ export class AppointmentController {
           | undefined,
         limit,
         offset,
-        employeeId
+        employeeId,
+        startDate,
+        endDate
       );
 
-      res.success(result, "Citas del proveedor obtenidas exitosamente", 200);
+      res.success(
+        {
+          appointments: result.appointments,
+          pagination: {
+            page: Math.floor(offset / limit) + 1,
+            limit,
+            total: result.total,
+            pages: Math.ceil(result.total / limit),
+          },
+        },
+        "Citas del proveedor obtenidas exitosamente",
+        200
+      );
     } catch (error) {
       next(error);
     }

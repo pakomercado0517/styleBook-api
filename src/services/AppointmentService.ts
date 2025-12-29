@@ -81,6 +81,14 @@ export interface AppointmentWithDetailsResponse extends AppointmentResponse {
     photo_url: string | null;
     rating: number | null;
   } | null;
+  client: {
+    id: number;
+    name: string;
+    apellido: string;
+    email: string;
+    phone: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 export class AppointmentService {
@@ -162,12 +170,16 @@ export class AppointmentService {
   /**
    * Obtener todas las citas del cliente con datos relacionados
    * @param employee_id - Filtro opcional por empleado
+   * @param pastDays - Filtro opcional: número de días antes de la fecha actual para obtener citas pasadas
+   * @param filter - Filtro opcional: "upcoming" para citas futuras
    */
   async getClientAppointments(
     clientId: number,
     page: number = 1,
     limit: number = 20,
-    employee_id?: number
+    employee_id?: number,
+    pastDays?: number,
+    filter?: "upcoming"
   ): Promise<{ appointments: AppointmentWithDetailsResponse[]; total: number }> {
     const client = await Users.findByPk(clientId);
     if (!client) {
@@ -177,6 +189,19 @@ export class AppointmentService {
     const whereClause: any = { client_id: clientId };
     if (employee_id) {
       whereClause.employee_id = employee_id;
+    }
+
+    // Filtro por fecha pasada: citas de los últimos N días
+    if (pastDays !== undefined && pastDays > 0) {
+      const now = new Date();
+      const pastDate = new Date(now.getTime() - pastDays * 24 * 60 * 60 * 1000);
+      whereClause.start_date = {
+        [Op.gte]: pastDate,
+        [Op.lt]: now,
+      };
+    } else if (filter === "upcoming") {
+      // Filtro para citas futuras
+      whereClause.start_date = { [Op.gte]: new Date() };
     }
 
     const { count, rows } = await Appointments.findAndCountAll({
@@ -221,6 +246,19 @@ export class AppointmentService {
             "specialty",
             "photo_url",
             "rating",
+          ],
+        },
+        {
+          model: Users,
+          as: "client",
+          required: false,
+          attributes: [
+            "id",
+            "name",
+            "apellido",
+            "email",
+            "phone",
+            "avatar_url",
           ],
         },
       ],
@@ -464,6 +502,19 @@ export class AppointmentService {
             "rating",
           ],
         },
+        {
+          model: Users,
+          as: "client",
+          required: false,
+          attributes: [
+            "id",
+            "name",
+            "apellido",
+            "email",
+            "phone",
+            "avatar_url",
+          ],
+        },
       ],
       limit,
       offset,
@@ -472,11 +523,8 @@ export class AppointmentService {
 
     // Obtener timezone del primer cliente (si existe)
     let defaultTimezone = "America/Mexico_City";
-    if (rows.length > 0) {
-      const client = await Users.findByPk(rows[0].client_id);
-      if (client) {
-        defaultTimezone = client.timezone;
-      }
+    if (rows.length > 0 && rows[0].client) {
+      defaultTimezone = rows[0].client.timezone;
     }
 
     return {
@@ -491,13 +539,17 @@ export class AppointmentService {
   /**
    * Obtener todas las citas de un proveedor con datos relacionados
    * @param employee_id - Filtro opcional por empleado
+   * @param start_date - Filtro opcional: fecha de inicio del período (ISO string)
+   * @param end_date - Filtro opcional: fecha de fin del período (ISO string)
    */
   async getProviderAppointments(
     providerId: number,
     status?: "pending" | "confirmed" | "completed" | "cancelled" | "no_show",
     limit: number = 20,
     offset: number = 0,
-    employee_id?: number
+    employee_id?: number,
+    start_date?: string,
+    end_date?: string
   ): Promise<{
     appointments: AppointmentWithDetailsResponse[];
     total: number;
@@ -510,6 +562,32 @@ export class AppointmentService {
 
     if (employee_id) {
       whereClause.employee_id = employee_id;
+    }
+
+    // Filtro por rango de fechas
+    if (start_date || end_date) {
+      whereClause.start_date = {};
+      if (start_date) {
+        // Parsear fecha ISO - Date constructor maneja ISO 8601 correctamente
+        const startDateParsed = new Date(start_date);
+        // Si la fecha no tiene componente de tiempo, establecer inicio del día en UTC
+        if (!start_date.includes("T")) {
+          startDateParsed.setUTCHours(0, 0, 0, 0);
+        }
+        whereClause.start_date[Op.gte] = startDateParsed;
+      }
+      if (end_date) {
+        // Parsear fecha ISO
+        const endDateParsed = new Date(end_date);
+        // Si la fecha no tiene componente de tiempo, establecer fin del día en UTC
+        if (!end_date.includes("T")) {
+          endDateParsed.setUTCHours(23, 59, 59, 999);
+        } else {
+          // Si tiene hora, agregar 1 día para incluir todo el día final
+          endDateParsed.setTime(endDateParsed.getTime() + 24 * 60 * 60 * 1000);
+        }
+        whereClause.start_date[Op.lt] = endDateParsed;
+      }
     }
 
     const { count, rows } = await Appointments.findAndCountAll({
@@ -556,6 +634,19 @@ export class AppointmentService {
             "rating",
           ],
         },
+        {
+          model: Users,
+          as: "client",
+          required: false,
+          attributes: [
+            "id",
+            "name",
+            "apellido",
+            "email",
+            "phone",
+            "avatar_url",
+          ],
+        },
       ],
       limit,
       offset,
@@ -564,11 +655,8 @@ export class AppointmentService {
 
     // Obtener timezone del primer cliente
     let defaultTimezone = "America/Mexico_City";
-    if (rows.length > 0) {
-      const client = await Users.findByPk(rows[0].client_id);
-      if (client) {
-        defaultTimezone = client.timezone;
-      }
+    if (rows.length > 0 && rows[0].client) {
+      defaultTimezone = rows[0].client.timezone;
     }
 
     return {
@@ -796,6 +884,16 @@ export class AppointmentService {
             specialty: appointment.employee.specialty,
             photo_url: appointment.employee.photo_url,
             rating: appointment.employee.rating,
+          }
+        : null,
+      client: appointment.client
+        ? {
+            id: appointment.client.id,
+            name: appointment.client.name,
+            apellido: appointment.client.apellido,
+            email: appointment.client.email,
+            phone: appointment.client.phone,
+            avatar_url: appointment.client.avatar_url,
           }
         : null,
     };

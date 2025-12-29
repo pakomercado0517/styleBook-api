@@ -125,7 +125,15 @@ router.get(
  * GET /appointments/provider/all
  * Obtener todas las citas del proveedor autenticado
  * Headers: Authorization: Bearer {token}
- * Query: ?status=confirmed&limit=20&offset=0
+ * Query: ?status=confirmed&limit=20&offset=0&start_date=2025-01-01&end_date=2025-01-31
+ * 
+ * Parámetros opcionales:
+ * - status: pending | confirmed | completed | cancelled | no_show
+ * - limit: número de resultados por página (default: 20, max: 100)
+ * - offset: número de resultados a saltar (default: 0)
+ * - employee_id: filtrar por ID de empleado
+ * - start_date: fecha de inicio del período (ISO 8601, ej: "2025-01-01" o "2025-01-01T00:00:00Z")
+ * - end_date: fecha de fin del período (ISO 8601, ej: "2025-01-31" o "2025-01-31T23:59:59Z")
  */
 router.get(
   "/provider/all",
