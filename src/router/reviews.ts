@@ -1,9 +1,9 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { ReviewController } from "../controllers/ReviewController";
 import { authenticate } from "../middlewares";
 import { reviewValidators, handleValidationErrors } from "../validators";
 
-const router = express.Router();
+const router: Router = express.Router();
 const reviewController = new ReviewController();
 
 /**

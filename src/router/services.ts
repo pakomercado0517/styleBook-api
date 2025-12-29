@@ -1,9 +1,9 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { ServiceController } from "../controllers/ServiceController";
 import { authenticate } from "../middlewares";
 import { serviceValidators, handleValidationErrors } from "../validators";
 
-const router = express.Router();
+const router: Router = express.Router();
 const serviceController = new ServiceController();
 
 /**

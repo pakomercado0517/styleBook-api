@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Express } from "express";
 import morgan from "morgan";
 import { db } from "./config/db";
 import { errorHandler, responseMiddleware } from "./middlewares";
@@ -28,7 +28,7 @@ export async function connectDB(): Promise<void> {
 
 connectDB();
 
-const app = express();
+const app: Express = express();
 
 // Middlewares globales
 app.use(morgan("dev"));

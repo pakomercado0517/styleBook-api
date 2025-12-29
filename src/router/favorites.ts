@@ -1,8 +1,8 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { FavoriteController } from "../controllers/FavoriteController";
 import { authenticate } from "../middlewares";
 
-const router = express.Router();
+const router: Router = express.Router();
 const favoriteController = new FavoriteController();
 
 // Todos los endpoints de favoritos requieren autenticación

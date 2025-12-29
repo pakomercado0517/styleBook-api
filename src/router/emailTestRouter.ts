@@ -2,7 +2,7 @@ import { Router } from "express";
 import emailTestController from "../controllers/EmailTestController";
 import { authenticate } from "../middlewares/auth.middleware";
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * 📧 EMAIL TESTING ROUTES

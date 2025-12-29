@@ -1,9 +1,9 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { AuthController } from "../controllers/AuthController";
 import { authenticate } from "../middlewares";
 import { authValidators, handleValidationErrors } from "../validators";
 
-const router = express.Router();
+const router: Router = express.Router();
 const authController = new AuthController();
 
 /**

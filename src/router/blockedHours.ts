@@ -1,9 +1,9 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { BlockedHoursController } from "../controllers/BlockedHoursController";
 import { authenticate } from "../middlewares";
 import { blockedHoursValidators, handleValidationErrors } from "../validators";
 
-const router = express.Router();
+const router: Router = express.Router();
 const blockedHoursController = new BlockedHoursController();
 
 /**

@@ -1,9 +1,9 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { AppointmentController } from "../controllers/AppointmentController";
 import { authenticate } from "../middlewares";
 import { appointmentValidators, handleValidationErrors } from "../validators";
 
-const router = express.Router();
+const router: Router = express.Router();
 const appointmentController = new AppointmentController();
 
 /**
@@ -126,7 +126,7 @@ router.get(
  * Obtener todas las citas del proveedor autenticado
  * Headers: Authorization: Bearer {token}
  * Query: ?status=confirmed&limit=20&offset=0&start_date=2025-01-01&end_date=2025-01-31
- * 
+ *
  * Parámetros opcionales:
  * - status: pending | confirmed | completed | cancelled | no_show
  * - limit: número de resultados por página (default: 20, max: 100)

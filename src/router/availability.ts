@@ -1,7 +1,7 @@
-import express, { Request, Response, NextFunction } from "express";
+import express, { Request, Response, NextFunction, Router } from "express";
 import { AvailabilityController } from "../controllers/AvailabilityController";
 
-const router = express.Router();
+const router: Router = express.Router();
 const availabilityController = new AvailabilityController();
 
 /**
