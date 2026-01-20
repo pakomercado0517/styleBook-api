@@ -1,0 +1,17 @@
+# Normalizar finales de línea
+* text=auto eol=lf
+
+# Archivos binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.tgz binary
+
+# Archivos específicos que deben mantener CRLF (si es necesario)
+# *.bat text eol=crlf
+# *.cmd text eol=crlf
