@@ -53,6 +53,7 @@ migrations/
 seeders/
 docs/
 postman_collection/
+.playwright-mcp/
 
 # nyc test coverage
 .nyc_output/
